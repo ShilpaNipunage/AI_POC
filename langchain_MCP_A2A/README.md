@@ -50,6 +50,7 @@ WEATHER_AGENT_HOST=localhost
 WEATHER_AGENT_PORT=7001
 AGENT_CARD_URL=http://localhost:7001/
 ```
+```
 langchain_agent:
 OPENAI_API_kEY=<openai_key>
 MCP_ENVOY_HOST=mcp-envoy
