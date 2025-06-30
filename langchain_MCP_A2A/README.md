@@ -29,9 +29,10 @@ Follow these instructions to get a copy of the project up and running on your lo
 ## Installation
 Clone the repository:
 
-``` git clone https://github.com/yourusername/your-repo-name.git
+```
+git clone https://github.com/yourusername/your-repo-name.git
 cd your-repo-name
-
+```
 *Install project dependencies using uv:*
 The subfolders a2a_client, a2a_agent, langchain_agent and mcp_server have their own uv environment. uv will automatically read pyproject.toml and uv.lock to install the correct dependencies for all Python components.
 
@@ -40,30 +41,27 @@ The subfolders a2a_client, a2a_agent, langchain_agent and mcp_server have their 
 # uv venv
 # source .venv/bin/activate # (or .venv\Scripts\activate for Windows)
 # uv sync
-
+```
 *Configuration*
 Create a .env file in the root directory of the project. This file will hold your environment variables, especially your OpenAI API key.
-
-# .env
-``` a2a_agent:
+```
+a2a_agent:
 WEATHER_AGENT_HOST=localhost
 WEATHER_AGENT_PORT=7001
 AGENT_CARD_URL=http://localhost:7001/
-
+```
 langchain_agent:
 OPENAI_API_kEY=<openai_key>
-
 MCP_ENVOY_HOST=mcp-envoy
 MCP_ENVOY_PORT=9000
-
+```
+```
 mcp_server:
 MCP_SERVER_HOST=0.0.0.0
 MCP_SERVER_PORT=7000
 MCP_SERVER_LOG_LEVEL=DEBUG
 MCP_SERVER_JSON_RESPONSE=False
-
-*Ensure Docker Images are Available:*
-The docker-compose.yml will handle building/pulling the necessary images. You don't typically need to build them manually unless debugging.
+```
 
 ###Interacting with the Agent
 There are 2 ways to interact with the application.
@@ -71,6 +69,8 @@ There are 2 ways to interact with the application.
 2. Commandline
 
 ####Option1: Docker option
+*Ensure Docker Images are Available:*
+The docker-compose.yml will handle building/pulling the necessary images. You don't typically need to build them manually unless debugging.
 
 *Usage*
 Starting the Services
@@ -79,24 +79,28 @@ All services (LangGraph Agent, LLM Proxy, MCP Server, and their Envoy sidecars) 
 *Build and run all services:*
 From the root of the project, execute:
 
-``` docker-compose up --build -d
+```
+docker-compose up --build -d
+```
 --build: Ensures that your Docker images are built before starting the containers.
 
 -d: Runs the containers in detached mode (in the background).
 
 ####Option2: Commandline
-```#Run MCP server
+```
+#Run MCP server
 cd <path>\mcp_server
 #Activate uv
 .venv\scripts\activate
 python weather_custom_host_port_server.py
-
+```
+```
 #Run a2a agent/langgraph agent
 cd <path>\a2a_agent
 #Activate uv
 .venv\scripts\activate
 python main.py
-
+```
 Once all services are running, you can interact with the LangGraph agent via the a2a_client.
 
 *Execute the A2A client:*
@@ -105,4 +109,4 @@ If you created a virtual environment with uv venv and activated it:
 # Ensure your virtual environment is active: 
 source .venv/bin/activate
 python clients/a2a_client/run_client.py 
-
+```
