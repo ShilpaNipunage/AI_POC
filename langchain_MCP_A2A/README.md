@@ -26,7 +26,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 * uv
 * OpenAI API Key
 
-## Installation
+### Installation
 Clone the repository:
 
 ```
@@ -64,12 +64,12 @@ MCP_SERVER_LOG_LEVEL=DEBUG
 MCP_SERVER_JSON_RESPONSE=False
 ```
 
-###Interacting with the Agent
+### Interacting with the Agent
 There are 2 ways to interact with the application.
 1. Docker option
 2. Commandline
 
-####Option1: Docker option
+#### Option1: Docker option
 *Ensure Docker Images are Available:*
 The docker-compose.yml will handle building/pulling the necessary images. You don't typically need to build them manually unless debugging.
 
@@ -87,7 +87,7 @@ docker-compose up --build -d
 
 -d: Runs the containers in detached mode (in the background).
 
-####Option2: Commandline
+#### Option2: Commandline
 ```
 #Run MCP server
 cd <path>\mcp_server
@@ -104,7 +104,7 @@ python main.py
 ```
 Once all services are running, you can interact with the LangGraph agent via the a2a_client.
 
-*Execute the A2A client:*
+### *Execute the A2A client:*
 If you created a virtual environment with uv venv and activated it:
 ```
 # Ensure your virtual environment is active: 
