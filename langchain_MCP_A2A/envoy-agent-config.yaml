@@ -1,0 +1,79 @@
+# envoy-agent-config.yaml
+# Envoy configuration for the Agent proxy.
+# This proxy will route external traffic (from host:9001) to the weather_agent application (weather_agent:7001).
+
+admin:
+  access_log_path: "/dev/stdout"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001
+
+static_resources:
+  listeners:
+  - name: listener_agent
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 9001 # Internal port for this proxy's main listener
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http_agent
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: service
+              domains: ["*"]
+              routes:
+              - match: { prefix: "/" }
+                route:
+                  cluster: weather_agent_cluster
+          access_log:
+            - name: envoy.access_loggers.stdout
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                log_format:
+                  json_format:
+                    timestamp: "%START_TIME%"
+                    method: "%REQ(:METHOD)%"
+                    path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+                    protocol: "%PROTOCOL%"
+                    response_code: "%RESPONSE_CODE%"
+                    response_flags: "%RESPONSE_FLAGS%"
+                    bytes_received: "%BYTES_RECEIVED%"
+                    bytes_sent: "%BYTES_SENT%"
+                    duration: "%DURATION%"
+                    upstream_service_time: "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"
+                    client_ip: "%DOWNSTREAM_REMOTE_ADDRESS%"
+                    user_agent: "%REQ(USER-AGENT)%"
+                    request_id: "%REQ(X-REQUEST-ID)%"
+                    authority: "%REQ(:AUTHORITY)%"
+                    upstream_host: "%UPSTREAM_HOST%"
+                    request_headers: "%REQ(ALL-HEADERS)%"
+                    response_headers: "%RESP(ALL-HEADERS)%"
+                    request_body: "%REQ(BODY)%"
+                    response_body: "%RESP(BODY)%"
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config: 
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  - name: weather_agent_cluster
+    connect_timeout: 0.25s
+    type: LOGICAL_DNS
+    dns_lookup_family: V4_ONLY
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: weather_agent_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: weather_agent # Docker Compose service name
+                port_value: 7001       # Port exposed by weather_agent container

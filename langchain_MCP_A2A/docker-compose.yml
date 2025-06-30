@@ -1,0 +1,83 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # MCP Server Application
+  mcp_server:
+    build:
+      context: ./mcp_server
+      dockerfile: Dockerfile
+    container_name: mcp_server_app
+    restart: unless-stopped
+    env_file:
+      - ./mcp_server/.env
+    environment:
+      - FASTMCP_LOG_LEVEL=DEBUG
+      - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=7000
+      - MCP_SERVER_LOG_LEVEL=DEBUG
+    expose:
+      - "7000" # Explicitly expose 8000, as it's the default internal port
+    networks:
+      - mcp_network
+
+  # Envoy Proxy for MCP Server
+  mcp-envoy:
+    image: envoyproxy/envoy:v1.29.2
+    container_name: mcp_server_envoy
+    volumes:
+      - ./envoy-mcp-config.yaml:/etc/envoy/envoy.yaml
+    # Map external host port 9000 to internal container port 9000
+    expose:
+      - "9000"
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mcp_server
+    networks:
+      - mcp_network
+    restart: unless-stopped
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--service-cluster", "mcp_server_cluster", "--service-node", "mcp_server_node"]
+
+  # Agent Application
+  weather_agent:
+    build:
+      context: ./a2a_agent
+      dockerfile: Dockerfile
+    container_name: weather_agent_app
+    env_file: # Load environment variables from agent/.env
+      - ./a2a_agent/.env
+    # Explicitly pass environment variables for the agent's connection to MCP Envoy
+    environment:
+      - WEATHER_AGENT_HOST=0.0.0.0 # This is the crucial change
+      - WEATHER_AGENT_PORT=7001
+      - AGENT_CARD_URL=http://localhost:9001/
+      - MCP_HOST=${MCP_ENVOY_HOST:-mcp-envoy} # Use value from .env or default
+      - MCP_PORT=${MCP_ENVOY_PORT:-9000}       # Use value from .env or default
+      - A2A_LOG_LEVEL=DEBUG
+    depends_on:
+      - mcp-envoy # Agent depends on the MCP Envoy proxy
+    expose:
+      - "7001"
+    networks:
+      - mcp_network
+    restart: on-failure
+
+  # Envoy Proxy for Agent
+  agent-envoy:
+    image: envoyproxy/envoy:v1.29.2
+    container_name: agent_envoy_proxy
+    volumes:
+      - ./envoy-agent-config.yaml:/etc/envoy/envoy.yaml
+    expose:
+      - "9001"
+    ports:
+      - "9001:9001"
+    networks:
+      - mcp_network
+    restart: unless-stopped
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--service-cluster", "agent_cluster", "--service-node", "agent_node"]
+
+networks:
+  mcp_network:
+    driver: bridge

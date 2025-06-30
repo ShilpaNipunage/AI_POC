@@ -1,0 +1,80 @@
+# envoy-mcp-config.yaml
+# Envoy configuration for the MCP Server
+admin:
+  access_log_path: "/dev/stdout" # Log admin access to stdout
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001 # Admin port for Envoy, internal to Docker Compose
+
+static_resources:
+  listeners:
+  - name: listener_mcp # Listener for incoming requests to MCP server proxy
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 9000 # Port for other services (like agent) to connect to MCP via proxy
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http_mcp
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend # Virtual host for routing
+              domains: ["*"]
+              routes:
+              - match: { prefix: "/mcp/" } # Match requests going to /mcp/
+                route:
+                  cluster: mcp_server_cluster # Route to the MCP server cluster
+                  prefix_rewrite: "/mcp/" # Rewrite prefix to match the application's expected path
+              - match: { prefix: "/" } # Default route for any other requests
+                route:
+                  cluster: mcp_server_cluster
+          access_log:
+            - name: envoy.access_loggers.stdout
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                log_format:
+                  json_format:
+                    timestamp: "%START_TIME%"
+                    method: "%REQ(:METHOD)%"
+                    path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+                    protocol: "%PROTOCOL%"
+                    response_code: "%RESPONSE_CODE%"
+                    response_flags: "%RESPONSE_FLAGS%"
+                    bytes_received: "%BYTES_RECEIVED%"
+                    bytes_sent: "%BYTES_SENT%"
+                    duration: "%DURATION%"
+                    upstream_service_time: "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"
+                    client_ip: "%DOWNSTREAM_REMOTE_ADDRESS%"
+                    user_agent: "%REQ(USER-AGENT)%"
+                    request_id: "%REQ(X-REQUEST-ID)%"
+                    authority: "%REQ(:AUTHORITY)%"
+                    upstream_host: "%UPSTREAM_HOST%"
+                    request_headers: "%REQ(ALL-HEADERS)%"
+                    response_headers: "%RESP(ALL-HEADERS)%"
+                    request_body: "%REQ(BODY)%"
+                    response_body: "%RESP(BODY)%"
+          http_filters:
+          - name: envoy.filters.http.router # Standard HTTP router filter
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router 
+                                                                                        
+  clusters:
+  - name: mcp_server_cluster # Cluster definition for the actual MCP server
+    connect_timeout: 0.25s
+    type: LOGICAL_DNS # Use DNS discovery for services within Docker Compose
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: mcp_server_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: mcp_server # Docker Compose service name for the MCP server app
+                port_value: 7000 # Internal port of the mcp_server container

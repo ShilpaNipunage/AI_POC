@@ -1,0 +1,11 @@
+[project]
+name = "a2a-client"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "a2a-sdk>=0.2.9",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+]
