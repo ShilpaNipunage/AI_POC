@@ -19,14 +19,16 @@ If you don't have `uv` installed:
 ```sh
 pip install uv
 ```
-
 ### 2. Install the Project in Editable Mode
 
 To install the project and its dependencies, run:
 ```sh
 uv sync
 ```
-
+To activate uv environment, run (windows):
+```sh
+.\.venv\Scripts\activate
+```
 ## Environment Variables
 
 This project requires several environment variables to be set for configuration. You can set these in a `.env` file in the project root or export them in your shell.
