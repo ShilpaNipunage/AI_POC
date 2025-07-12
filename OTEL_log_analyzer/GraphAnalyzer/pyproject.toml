@@ -1,0 +1,15 @@
+[project]
+name = "graphanalyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "langchain>=0.3.26",
+    "langchain-neo4j>=0.4.0",
+    "langchain-openai>=0.3.27",
+    "langgraph>=0.5.2",
+    "neo4j>=5.28.1",
+    "openai>=1.95.0",
+]
