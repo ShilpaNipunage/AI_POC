@@ -11,15 +11,17 @@ This folder contains the **GraphGenerator** app, which parses OpenTelemetry (OTE
 The code generates a knowledge graph with the following data model:
 
 - **Nodes**:
-  - `Service`: Represents a microservice or application component. Properties include `service_name`, `service_namespace`, and other OTEL resource attributes.
-  - `Resource`: Represents a resource associated with a log record. Properties may include `resource_attributes` as key-value pairs.
-  - `LogRecord`: Represents an individual log entry. Properties include `timestamp`, `severity_text`, `severity_number`, `trace_id`, `span_id`, `body`, and additional OTEL log attributes.
+  - `Service`: Represents a service. Properties include `service_name`, `service_instance_id`, `version` and other OTEL resource attributes.
+  - `Scope`: Represents a scope associated with a log record. Properties include 'scope_name'.
+  - `Operation`: Represents an individual operation executed as part of the scope. Properties `body`.
+  - `Trace` : Represents Trace id
+  - `Span` : Represents span id 
 
 - **Relationships**:
-  - `(:Service)-[:HAS_RESOURCE]->(:Resource)`: Connects a service to its resource.
-  - `(:Resource)-[:GENERATED]->(:LogRecord)`: Connects a resource to the log records it generated.
-  - `(:Service)-[:GENERATED]->(:LogRecord)`: (In some cases) Directly connects a service to its log records.
-  - `(:LogRecord)-[:RELATED_TO]->(:LogRecord)`: (Optional) Connects related log records, e.g., by trace or span relationships.
+  - `(:Service)-[:HAS_SCOPE]->(:Scope)`: Connects a service to its scope.
+  - `(:Trace)-[:IN_TRACE]->(:Scope)`: Connects a scope to the trace.
+  - `(:Trace)-[:HAS_SERVICE]->(:Service)`: Connects a trace to a service.
+  - `(:Scope)-[:MADE_OPERATION]->(:Operation)`: Refers to the operation performed in the scope.
 
 - **Properties**:
   - Each node and relationship can have properties such as `service_name`, `resource attributes`, `timestamp`, `severity_text`, `trace_id`, `span_id`, and `body`, depending on the OTEL log structure.
@@ -43,7 +45,10 @@ From this folder, run:
 ```sh
 uv sync
 ```
-
+To activate uv environment, run (windows):
+```sh
+.\.venv\Scripts\activate
+```
 ### 3. Set up environment variables
 
 Create a `.env` file in this folder with the following contents (edit as needed):
