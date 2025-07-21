@@ -1,0 +1,598 @@
+{
+  "name": "Beacon-Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {}
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "sender": "svnshilpa@gmail.com"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1140,
+        -325
+      ],
+      "id": "c00bb6b7-755a-421c-a9ce-dbfe7d9484e5",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LWS2ekPwkz5pYcGz",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "={{'data'}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -325
+      ],
+      "id": "ce867dfd-3602-4d52-b99b-4482daceca10",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "sendTo": "svnshilpa@gmail.com",
+        "subject": "=School Beacon Summary for Grade {{ $('Code1').item.json.grade }} !!",
+        "message": "={{ $json.data }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        -320
+      ],
+      "id": "4a3a9dcc-b1da-466f-9355-8e3db18d494c",
+      "name": "Send a message",
+      "webhookId": "fc0f3dcb-6dfe-4000-a105-9560bc3b483f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CfwU7NSCJoTJ7n8z",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        980,
+        -325
+      ],
+      "id": "e3dd96ce-d5e5-4d10-b8f8-7f9249863334",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItem = items[0]; // Get the entire input item\nconst attachment = inputItem.binary.attachment_0;\n\nif (!attachment) {\n  console.error(\"Attachment 'attachment_0' not found in binary data.\");\n  return []; // Return an empty array if no attachment to process\n}\n\nconst line= $input.first().json.headers.subject\n\nconst match = line.match(/Grade\\s(\\d+)/i);\n\nlet grade = -1\nif (match) {\n   grade = parseInt(match[1], 10);\n}\n\nreturn [\n  {\n    json: {\n      grade,\n      mimeType: attachment.mimeType, // Put mimeType in JSON for easy access downstream\n      fileName: attachment.fileName, \n    },\n    \n    binary: {\n      data: attachment // Pass the entire attachment object here\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        -325
+      ],
+      "id": "65342a40-4e74-490d-a2a8-76f7b305c5f9",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2a2c78a1-5a34-4462-9d7d-9cd6b1aca65e",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        180,
+        -325
+      ],
+      "id": "08a13a5a-4209-452a-b3c3-443d95cc01df",
+      "name": "If - mimeType : application/pdf"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2e31efde-e8c7-4b54-a836-9e52dfe04686",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/zip",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -460
+      ],
+      "id": "cd6bdfee-ec9c-45fe-ba94-e7879cffca79",
+      "name": "If1 - mimeType : application/zip"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        -260,
+        -480
+      ],
+      "id": "b503e361-930d-4c2d-bd8f-81f563fdf96e",
+      "name": "Compression"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItem = items[0]; // Get the entire input item\n\nconst attachments = inputItem.binary;\nconst targetFileName = 'Grade ' + $('Code1').first().json.grade + '.pdf'\n\nconst targetMimeType = \"application/pdf\"; // Recommended to also check MIME type\n\nlet foundPdfAttachment = null;\n\n// Iterate over all properties in the 'attachments' object\n// Each property represents a single attachment (e.g., 'attachment_0', 'attachment_1', 'data')\nfor (const attachmentKey in attachments) {\n  const currentAttachment = attachments[attachmentKey];\n\n  // Ensure the currentAttachment object and its properties exist\n  if (currentAttachment && currentAttachment.fileName && currentAttachment.mimeType) {\n    // Compare the fileName and mimeType\n    if (currentAttachment.fileName === targetFileName && currentAttachment.mimeType === targetMimeType) {\n      foundPdfAttachment = currentAttachment;\n      break; // Found the specific PDF, no need to check further\n    }\n  }\n}\n\n// Prepare the output for the next node\nif (foundPdfAttachment) {\n  return [\n    {\n      json: {\n        fileName: foundPdfAttachment.fileName,\n        mimeType: foundPdfAttachment.mimeType,\n      },\n      // CRITICAL: Pass the actual binary data of the found PDF\n      // We name it 'data' for consistency with n8n's default binary property\n      binary: {\n        data: foundPdfAttachment \n      }\n    }\n  ];\n} else {\n  // If the specific PDF was not found, return an empty array\n  // This will stop the workflow branch or allow a subsequent node to handle no input\n  console.log(`PDF with filename \"${targetFileName}\" and mimeType \"${targetMimeType}\" not found.`);\n  return []; \n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        -480
+      ],
+      "id": "80510a0c-f1c2-49c0-93ed-e4f1cab4712e",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1812a24-c68f-450f-a750-4dbfb09e49ac",
+              "leftValue": "={{ $json.headers.subject }}",
+              "rightValue": "Beacon",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -920,
+        -325
+      ],
+      "id": "14802f9b-97b2-4f14-981a-39b9945b45dc",
+      "name": "If - subject = Beacon"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1500,
+        -320
+      ],
+      "id": "2cd0cbe3-dc53-4d4b-967e-4f952858db7c",
+      "name": "Mark original message as read",
+      "webhookId": "59c8e9a4-c514-43ad-92df-0478d4dcfef2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LWS2ekPwkz5pYcGz",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Email Retrieval & verification",
+        "height": 300,
+        "width": 600
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        -460
+      ],
+      "id": "b30c5b71-0d34-4158-a4fd-4e3f194d9e3b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Email processing\n",
+        "height": 300,
+        "width": 600,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        -600
+      ],
+      "id": "d729c921-d822-46ed-8631-008aa481288b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Generate Beacon Summary\n### Fetch pdf contents for extracting academic details\n### Pass email body and pdf contents to LLM for information extraction & formatting\n",
+        "height": 540,
+        "width": 960,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -500
+      ],
+      "id": "6080dfee-b126-4fcf-aa90-d316332e2b3d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Send Beacon Summary",
+        "height": 280,
+        "width": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        -440
+      ],
+      "id": "e0f4aa96-474b-429b-a0c2-cdc57042dc8f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert in creating tasks in Google Tasks.\n\nFrom the provided contents, identify and create tasks using the Google Tasks tool.\n\n### Requirements:\n\n1. **Date Format**: Use full ISO 8601 format, including milliseconds and the 'Z' suffix to indicate UTC time. Example: `2025-07-18T20:00:00.000Z`.\n\n2. **Week Information**:\n   - Extract week ranges like: `Week 11 (14th July to 18th July)`.\n   - If a due date is not explicitly provided, use the **last working day (usually Friday)** of the week mentioned.\n   - If a time is not provided, default to **8:00 PM UTC**.\n\n3. **From 'Subject-wise Assignment Details' section**:\n   - For each item, extract:\n     - **Subject Name**\n     - **Assignment Description**\n     - **Due Date** (from submission date or inferred from week)\n\n4. **From 'Subject-wise Assessment Details' section**:\n   - For each item, extract:\n     - **Subject Name**\n     - **Assessment Block/Chapter Details**\n     - **Due Date** (from assessment date or inferred from week)\n\n\n-----\nContents:\n{{ $json.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        640,
+        140
+      ],
+      "id": "f042c1f2-32ef-42eb-9dd3-f1ece240b558",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "8d7aea64-b44f-44a3-b4ac-4dab02350999",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "otG4lkUwRJjZyGLv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Create a task in Google Tasks. This  tool takes an input as below\n Title: title/name of the task\n Due Date: due date for the task in ISO‑8601 datetime format",
+        "task": "MTA4NDAzODQ4OTY2Njk1MjYxNTM6MDow",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}",
+        "additionalFields": {
+          "dueDate": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Due_Date', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasksTool",
+      "typeVersion": 1,
+      "position": [
+        800,
+        380
+      ],
+      "id": "82b0ba34-ba83-42f8-8218-9038417022b3",
+      "name": "Create a task in Google Tasks",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "hGWrZ7eXYKsosdtW",
+          "name": "Google Tasks account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -100
+      ],
+      "id": "a69d7a4b-e490-41f5-a357-be643ff9aa31",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "otG4lkUwRJjZyGLv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant specialized in summarizing educational content and extracting key academic details. Your responses should be clear, concise, and well-structured, first providing the academic summary in Markdown.\nNote that this summary is for a parent who wants to understand briefly about what is going to happen in the school. So keep your details limited. \n\nYou will perform two distinct tasks, maintaining the specified order in your reply.\n\n---\n\n## Task 1: Summarize Email Communications\n\n**Input:** The content of a Gmail trigger: `{{ $('Gmail Trigger').item.json.text }}`\n\n**Instructions:**\n* Provide a **brief and concise, grade-wise summary** of the email content.\n* **Integrate key action items directly into the summary**, formatting them as clear bullet points.\n* Focus on information relevant to grade `{{ $('Code1').item.json.grade }}` or general announcements applicable to all grades.\n\n---\n\n## Task 2: Extract Academic Information from PDF and Generate Google Tasks\n\n**Input:** The content of a PDF document: `{{ $json.text }}`\n\n**Instructions:**\nFrom the provided PDF content, you will perform below task:\n\n**Task: Generate Academic Information (Markdown Format)**\n* Extract week details like Week 11 (14th July to 18thJuly)\n\n* Extract and summarize the following, ensuring a structured and readable Markdown format. If any data is not available, ignore it; do not add anything like \"N/A\" or \"not available\".\n\n    1.  **Subject-wise Curriculum Overview:**\n        * Provide a bulleted summary of what will be taught per subject.\n        * For each subject, use nested bullets for blocks/chapters, **bolding** the block/chapter name. Use block/chapter name only once; dont add any additional details. \n        * **Example:**\n            * EVS:\n                * **Block 1:** <name of the block>\n                * **Block 2:** <name of the block>\n\n    2.  **Subject-wise Assignment Details:**\n        * Present this information as a bulleted list.\n        * For each subject include the block for which the assignment is given, assignment description, and submission date.\n        * If a submission date is not explicitly mentioned, do not include the \"Submission Date\" line for that assignment.\n\n    3.  **Subject-wise Assessment Details:**\n        * Present this information as a bulleted list.\n        * For each subject, include the assessment details if available, the block for which the assessment will happen, and the assessment date.\n        * If an assessment date is not explicitly mentioned, do not include the \"Assessment Date\" line for that assessment.\n\n---\n\n## Desired Output Format:\n\n```markdown\n## [Week]\n\n## General Updates\n[Concise summary of general announcements and integrated action items, formatted as bullets.]\n\n---\n\n## Updates for Grade {{ $('Code1').item.json.grade }}\n[Concise summary of grade-specific updates and integrated action items, formatted as bullets.]\n\n---\n\n## Academic Information:\n\n### Subject-wise Curriculum Overview\n[Bulleted list of subjects and their curriculum details, with bolded block/chapter names.]\n\n### Subject-wise Assignment Details\n* **[Subject Name]**\n    * **Block:** [Block/Chapter]\n    * **Assignment:** [Assignment Description]\n    * **Submission Date:** Date\n* **[Subject Name]**\n    * **Block:** [Block/Chapter]\n    * **Assignment:** [Assignment Description]\n    * **Submission Date:** Date\n...\n\n### Subject-wise Assessment Details\n* **[Subject Name]**\n    * **Block:** [Block/Chapter]\n    * **Date:** Date\n* **[Subject Name]**\n    * **Block:** [Block/Chapter]\n    * **Date:** Date\n...\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        620,
+        -320
+      ],
+      "id": "e6e47462-d3cf-4537-a5ee-026046a16840",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "content": "## Create tasks along with the due date in Google Tasks  ",
+        "height": 500,
+        "width": 960,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        80
+      ],
+      "id": "52da650e-aadc-4c96-ad75-d575a440c0c6",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "If - subject = Beacon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "If - mimeType : application/pdf",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1 - mimeType : application/zip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - mimeType : application/pdf": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1 - mimeType : application/zip": {
+      "main": [
+        [
+          {
+            "node": "Compression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compression": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - subject = Beacon": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "If - mimeType : application/pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Mark original message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task in Google Tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1af8dfbb-bdbf-4921-8c3a-40565a6af43e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fe3751a71bd2e80b4a345688fc56182838369e2e3412660c8e949a674f6504a"
+  },
+  "id": "VlIoFY2Ixs9Zpc1I",
+  "tags": []
+}
