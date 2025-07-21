@@ -28,9 +28,14 @@ This project automates the parsing of school beacons (emails and the attachments
 
 ## 📸 Screenshots
 
+### n8n Workflow:
 ![workflow](https://github.com/user-attachments/assets/c3b8b5e1-c16e-4016-bfec-2a214b065719)
 
+
+### Sample School Email:
 ![Mail from School](https://github.com/user-attachments/assets/a7070f44-bcb4-461c-b728-9bd6e5581148)
 
+
+### Sample generated Summary:
 ![BeaconSummary](https://github.com/user-attachments/assets/257934f0-f883-4bb2-9377-06e785d83323)
 
